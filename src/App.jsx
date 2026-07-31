@@ -7,11 +7,14 @@ import Home from "./pages/Home";
 import Forum from "./pages/Forum";
 import PostDetail from "./pages/PostDetail";
 import VoiceChat from "./pages/VoiceChat";
+import Admin from "./pages/Admin";
 import { ensureAnonymousLogin } from "./firebase";
+import { useStatusModeracao } from "./hooks/useModeracao";
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
+  const { banidoAte, admin } = useStatusModeracao(user);
 
   useEffect(() => {
     ensureAnonymousLogin((loggedUser) => {
@@ -34,9 +37,10 @@ export default function App() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/forum" element={<Forum user={user} />} />
-          <Route path="/forum/:postId" element={<PostDetail user={user} />} />
+          <Route path="/forum" element={<Forum user={user} banidoAte={banidoAte} admin={admin} />} />
+          <Route path="/forum/:postId" element={<PostDetail user={user} banidoAte={banidoAte} admin={admin} />} />
           <Route path="/voz" element={<VoiceChat user={user} />} />
+          <Route path="/admin" element={<Admin user={user} admin={admin} />} />
         </Routes>
       </main>
       <Footer />
