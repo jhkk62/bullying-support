@@ -1,6 +1,8 @@
+// src/App.jsx
 import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Forum from "./pages/Forum";
 import PostDetail from "./pages/PostDetail";
@@ -27,14 +29,17 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/forum" element={<Forum user={user} />} />
-        <Route path="/forum/:postId" element={<PostDetail user={user} />} />
-        <Route path="/voz" element={<VoiceChat user={user} />} />
-      </Routes>
+      <main className="flex-1">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/forum" element={<Forum user={user} />} />
+          <Route path="/forum/:postId" element={<PostDetail user={user} />} />
+          <Route path="/voz" element={<VoiceChat user={user} />} />
+        </Routes>
+      </main>
+      <Footer />
     </div>
   );
 }
