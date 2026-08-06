@@ -28,12 +28,13 @@ export default function PostDetail({ user, banidoAte, admin }) {
     return () => unsub();
   }, [postId]);
 
-  async function enviarComentario(e) {
+async function enviarComentario(e) {
     e.preventDefault();
     if (enviando || emEspera || !novoComentario.trim() || banidoAte) return;
 
     const nivel = analisarTexto(novoComentario);
 
+    // Regra 1: Banimento de 24 horas para ameaças graves
     if (nivel === "grave") {
       await setDoc(doc(db, "banidos", user.uid), {
         ate: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -41,6 +42,30 @@ export default function PostDetail({ user, banidoAte, admin }) {
       });
       setNovoComentario("");
       return;
+    }
+
+    // Regra 2: Banimento de 2 minutos para palavrões (moderado)
+    if (nivel === "moderado") {
+      await setDoc(doc(db, "banidos", user.uid), {
+        ate: new Date(Date.now() + 2 * 60 * 1000),
+        nivel, motivo: "uso de linguagem ofensiva ou xingamentos em comentário",
+      });
+      setNovoComentario("");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      await addDoc(collection(db, "posts", postId, "comentarios"), {
+        texto: novoComentario.trim(), autorId: user?.uid || "anonimo", createdAt: serverTimestamp(),
+      });
+      await updateDoc(doc(db, "posts", postId), { totalComentarios: increment(1) });
+      setNovoComentario("");
+      if (nivel === "autolesao") setMostrarApoio(true);
+      setEmEspera(true);
+      setTimeout(() => setEmEspera(false), TEMPO_ENTRE_COMENTARIOS);
+    } finally {
+      setEnviando(false);
     }
 
     setEnviando(true);
