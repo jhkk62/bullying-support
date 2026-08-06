@@ -24,6 +24,7 @@ export default function Forum({ user, banidoAte, admin }) {
 
     const nivel = analisarTexto(`${titulo} ${texto}`);
 
+    // Regra 1: Banimento de 24 horas para ameaças graves
     if (nivel === "grave") {
       await setDoc(doc(db, "banidos", user.uid), {
         ate: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -31,6 +32,30 @@ export default function Forum({ user, banidoAte, admin }) {
       });
       setTitulo(""); setTexto("");
       return;
+    }
+
+    // Regra 2: Banimento de 2 minutos para palavrões (moderado)
+    if (nivel === "moderado") {
+      await setDoc(doc(db, "banidos", user.uid), {
+        ate: new Date(Date.now() + 2 * 60 * 1000),
+        nivel, motivo: "uso de linguagem ofensiva ou xingamentos",
+      });
+      setTitulo(""); setTexto("");
+      return;
+    }
+
+    setEnviando(true);
+    try {
+      await addDoc(collection(db, "posts"), {
+        titulo: titulo.trim(), texto: texto.trim(),
+        autorId: user?.uid || "anonimo",
+        createdAt: serverTimestamp(), totalComentarios: 0,
+        sinalizado: false, // Como agora ele é banido, o post nem é criado, então não precisa sinalizar
+      });
+      setTitulo(""); setTexto("");
+      if (nivel === "autolesao") setMostrarApoio(true);
+    } finally {
+      setEnviando(false);
     }
 
     setEnviando(true);
