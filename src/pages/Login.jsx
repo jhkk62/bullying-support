@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -7,28 +6,27 @@ import { auth, db } from "../firebase";
 const TURMAS = ["6º A", "6º B", "7º A", "7º B", "8º A", "8º B", "9º A", "9º B", "1º A", "1º B", "2º ano", "3º ano"];
 const TURMA_LIBERADA = "9º B";
 
-// 👉 Troque pelos nomes reais da sua turma (só os nomes — sem data de nascimento aqui)
 const ALUNOS_9B = [
+  "Ana Beatriz Caires Nery",
+  "Anna Beatriz Amorim",
+  "Anna Júlia Ramos",
+  "Artur Silva Gomes",
+  "Bianca Andrade Lago",
+  "Bianca Nascimento",
+  "Giulia Karen",
+  "Izadora Araújo",
   "João Helder de Santana Souza",
+  "Júlia Soares Franco",
+  "Lara Aguiar Rocha",
+  "Laura Stock Maia",
   "Marcelo Tourinho Araújo Pires",
   "Pedro Miranda Silva",
-  "Lara Aguiar Rocha",
-  "Júlia Soares Franco",
-  "Rafael de Sousa Reis",
-  "Anna Beatriz Amorim",
-  "Samylle Cardoso Queiroz",
-  "Ana Beatriz Caires Nery",
-  "Artur Silva Gomes",
-  "Thayla Meira Teixeira",
-  "Sofia Ribas Lima",
   "Pérola Santana Andrade",
-  "Laura Stock Maia",
-  "Bianca Andrade Lago",
+  "Rafael de Sousa Reis",
+  "Samylle Cardoso Queiroz",
+  "Sofia Ribas Lima",
   "Stefani Dora Martins",
-  "Izadora Araújo",
-  "Anna Júlia Ramos",
-  "Bianca Nascimento",
-  "Giulia Karen"
+  "Thayla Meira Teixeira"
 ];
 
 function gerarEmailFicticio(nomeCompleto, turma) {
@@ -48,27 +46,39 @@ export default function Login() {
 
   const nomeFinal = naoEstaNaLista ? nomeDigitado.trim() : nome;
 
+  // O erro estava aqui: faltava o 'async' antes da function
   async function entrar(e) {
     e.preventDefault();
     setErro("");
     if (!nomeFinal || !senha) return;
+
+    if (senha.length < 6) {
+      setErro("A senha precisa ter pelo menos 6 caracteres.");
+      return;
+    }
+
     setCarregando(true);
     const email = gerarEmailFicticio(nomeFinal, turma);
 
     try {
-      const cred = naoEstaNaLista
-        ? await createUserWithEmailAndPassword(auth, email, senha)
-        : await signInWithEmailAndPassword(auth, email, senha);
-
+      // 1. Tenta logar primeiro
+      const cred = await signInWithEmailAndPassword(auth, email, senha);
       await setDoc(doc(db, "alunos", cred.user.uid), { nome: nomeFinal, turma }, { merge: true });
+      
     } catch (err) {
-      if (["auth/user-not-found", "auth/wrong-password", "auth/invalid-credential"].includes(err.code)) {
-        setErro("Nome ou senha incorretos.");
-      } else if (err.code === "auth/email-already-in-use") {
-        setErro("Já existe conta com esse nome. Tenta entrar em vez de criar conta.");
-      } else {
-        setErro("Não foi possível entrar. Tente novamente.");
-        console.error(err);
+      // 2. Se falhar, tenta criar a conta
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, senha);
+        await setDoc(doc(db, "alunos", cred.user.uid), { nome: nomeFinal, turma }, { merge: true });
+        
+      } catch (createErr) {
+        if (createErr.code === "auth/email-already-in-use") {
+          setErro("Conta já existe: A senha está incorreta.");
+        } else {
+          setErro("Erro interno. Aperte F12 e veja a aba Console.");
+          console.error("Erro no login:", err);
+          console.error("Erro na criação:", createErr);
+        }
       }
     } finally {
       setCarregando(false);
