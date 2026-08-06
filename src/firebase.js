@@ -1,7 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { getAuth, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,18 +13,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-
-export function ensureAnonymousLogin(callback) {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      callback(user);
-    } else {
-      signInAnonymously(auth).catch((err) =>
-        console.error("Erro no login anônimo:", err)
-      );
-    }
+export const sair = () => {
+  signOut(auth).then(() => {
+    console.log("Usuário deslogado com sucesso");
+  }).catch((error) => {
+    console.error("Erro ao deslogar:", error);
   });
-}
+};

@@ -18,9 +18,7 @@ export default function PostDetail({ user, banidoAte, admin }) {
   const [mostrarApoio, setMostrarApoio] = useState(false);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "posts", postId), (snap) => {
-      if (snap.exists()) setPost({ id: snap.id, ...snap.data() });
-    });
+    const unsub = onSnapshot(doc(db, "posts", postId), (snap) => { if (snap.exists()) setPost({ id: snap.id, ...snap.data() }); });
     return () => unsub();
   }, [postId]);
 
@@ -36,12 +34,10 @@ export default function PostDetail({ user, banidoAte, admin }) {
 
     const nivel = analisarTexto(novoComentario);
 
-    if (nivel === "grave" || nivel === "moderado") {
-      const duracaoMs = nivel === "grave" ? 24 * 60 * 60 * 1000 : 2 * 60 * 1000;
+    if (nivel === "grave") {
       await setDoc(doc(db, "banidos", user.uid), {
-        ate: new Date(Date.now() + duracaoMs),
-        nivel,
-        motivo: "linguagem ofensiva/ameaçadora detectada em comentário",
+        ate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        nivel, motivo: "ameaça direta detectada em comentário",
       });
       setNovoComentario("");
       return;
@@ -50,17 +46,13 @@ export default function PostDetail({ user, banidoAte, admin }) {
     setEnviando(true);
     try {
       await addDoc(collection(db, "posts", postId, "comentarios"), {
-        texto: novoComentario.trim(),
-        autorId: user?.uid || "anonimo",
-        createdAt: serverTimestamp(),
+        texto: novoComentario.trim(), autorId: user?.uid || "anonimo", createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, "posts", postId), { totalComentarios: increment(1) });
       setNovoComentario("");
       if (nivel === "autolesao") setMostrarApoio(true);
       setEmEspera(true);
       setTimeout(() => setEmEspera(false), TEMPO_ENTRE_COMENTARIOS);
-    } catch (err) {
-      console.error("Erro ao comentar:", err);
     } finally {
       setEnviando(false);
     }
@@ -88,13 +80,10 @@ export default function PostDetail({ user, banidoAte, admin }) {
       <div className="relative bg-white rounded-2xl shadow p-6 mb-6 border border-gray-100">
         <h1 className="text-xl font-bold text-gray-800 mb-2 pr-8">{post.titulo}</h1>
         <p className="text-gray-600 whitespace-pre-line">{post.texto}</p>
-        {podeExcluirPost && (
-          <button onClick={excluirPost} className="absolute top-6 right-6 text-gray-300 hover:text-red-500 text-sm" title="Excluir post">✕</button>
-        )}
+        {podeExcluirPost && <button onClick={excluirPost} className="absolute top-6 right-6 text-gray-300 hover:text-red-500 text-sm" title="Excluir post">✕</button>}
       </div>
 
       <h2 className="font-semibold text-gray-700 mb-3">Comentários de apoio ({comentarios.length})</h2>
-
       <div className="space-y-3 mb-6">
         {comentarios.map((c) => (
           <div key={c.id} className="relative bg-brand-50 rounded-lg p-4 pr-10 text-sm text-gray-700">
@@ -108,7 +97,7 @@ export default function PostDetail({ user, banidoAte, admin }) {
 
       {mostrarApoio && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg p-4 mb-4 text-center">
-          Você não está sozinho(a) — o CVV atende gratuitamente, 24h por dia, pelo telefone <strong>188</strong> ou em{" "}
+          Você não está sozinho(a) — o CVV atende 24h, pelo telefone <strong>188</strong> ou em{" "}
           <a href="https://www.cvv.org.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">cvv.org.br</a>.
         </div>
       )}
@@ -121,7 +110,7 @@ export default function PostDetail({ user, banidoAte, admin }) {
         <form onSubmit={enviarComentario} className="flex gap-2">
           <input value={novoComentario} onChange={(e) => setNovoComentario(e.target.value)}
             placeholder={bloqueado ? "Aguarde alguns segundos..." : "Deixe uma palavra de apoio..."} disabled={bloqueado}
-            className="flex-1 border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-gray-100" />
+            className="flex-1 border border-gray-200 rounded-full px-4 py-2 disabled:bg-gray-100" />
           <button disabled={bloqueado} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white px-5 py-2 rounded-full">Enviar</button>
         </form>
       )}
