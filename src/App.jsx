@@ -7,7 +7,9 @@ import Footer from "./components/Footer";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Foruns from "./pages/Foruns";
+import Forum from "./pages/Forum"; // Adicionado!
 import ForumDetail from "./pages/ForumDetail";
+import PostDetail from "./pages/PostDetail"; // Adicionado!
 import Admin from "./pages/Admin";
 import Perfil from "./pages/Perfil";
 import Notificacoes from "./pages/Notificacoes";
@@ -50,7 +52,12 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/forum" element={<Foruns user={user} />} />
+            {/* Rota para o feed geral dos fóruns de exemplo */}
+            <Route path="/forum/geral" element={<Forum user={user} banidoAte={banidoAte} admin={admin} />} />
+            {/* Rota para um fórum específico criado por usuários */}
             <Route path="/forum/:forumId" element={<ForumDetail user={user} banidoAte={banidoAte} admin={admin} />} />
+            {/* Rota para ver os detalhes e comentários de um post */}
+            <Route path="/post/:postId" element={<PostDetail user={user} banidoAte={banidoAte} admin={admin} />} />
             <Route path="/perfil" element={<Perfil user={user} />} />
             <Route path="/notificacoes" element={<Notificacoes user={user} />} />
             <Route path="/log" element={<UpdateLog />} />

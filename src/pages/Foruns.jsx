@@ -93,12 +93,8 @@ export default function Foruns({ user }) {
             {todosForuns.map((forum) => (
               <Link
                 key={forum.id}
-                to={forum.id !== "exemplo-1" && forum.id !== "exemplo-2" && forum.id !== "exemplo-3" ? `/forum/${forum.id}` : "#"}
-                onClick={(e) => {
-                  if (["exemplo-1", "exemplo-2", "exemplo-3"].includes(forum.id)) {
-                    e.preventDefault();
-                  }
-                }}
+                // Redireciona os exemplos para a página geral /forum. Fóruns reais vão para /forum/id
+                to={["exemplo-1", "exemplo-2", "exemplo-3"].includes(forum.id) ? "/forum" : `/forum/${forum.id}`}
                 className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg hover:border-brand-300 transition-all group cursor-pointer"
               >
                 <div className="flex items-start justify-between mb-4">

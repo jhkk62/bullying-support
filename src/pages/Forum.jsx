@@ -24,16 +24,16 @@ export default function Forum({ user, banidoAte, admin }) {
     e.preventDefault();
     if (!titulo.trim() || !texto.trim() || banidoAte) return;
 
-    const nivel = analisarTexto(`${titulo} ${texto}`, "post");
-
-    if (nivel === "grave") {
-      // já bane e mostra mensagem
-      alert("Esse conteúdo viola as regras da plataforma.");
-      return;
-    }
-
     setEnviando(true);
     try {
+      const nivel = analisarTexto(`${titulo} ${texto}`, "post");
+
+      if (nivel === "grave") {
+        alert("Esse conteúdo viola as regras da plataforma.");
+        setEnviando(false);
+        return;
+      }
+
       await addDoc(collection(db, "posts"), {
         titulo: titulo.trim(),
         texto: texto.trim(),
@@ -45,6 +45,9 @@ export default function Forum({ user, banidoAte, admin }) {
       setTitulo("");
       setTexto("");
       if (nivel === "autolesao") setMostrarApoio(true);
+    } catch (error) {
+      console.error("Erro ao publicar:", error);
+      alert("Erro ao publicar: " + error.message);
     } finally {
       setEnviando(false);
     }

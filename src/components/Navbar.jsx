@@ -1,9 +1,10 @@
 // src/components/Navbar.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { signOut } from "firebase/auth";
-import { auth } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "../firebase";
 
 const links = [
   { to: "/", label: "Início", end: true },
@@ -14,12 +15,29 @@ const links = [
 
 export default function Navbar({ user }) {
   const [menuAberto, setMenuAberto] = useState(false);
+  const [perfil, setPerfil] = useState(null);
   const navigate = useNavigate();
+
+  // Escuta as alterações do perfil do usuário em tempo real para atualizar a foto
+  useEffect(() => {
+    if (!user) return;
+    
+    const unsub = onSnapshot(doc(db, "alunos", user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setPerfil(docSnap.data());
+      }
+    });
+
+    return () => unsub();
+  }, [user]);
 
   async function sair() {
     await signOut(auth);
     setMenuAberto(false);
   }
+
+  // Pega a letra inicial caso não tenha foto (tenta apelido, depois nome, depois email)
+  const letraInicial = perfil?.apelido?.[0]?.toUpperCase() || perfil?.nome?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "?";
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 shadow-sm">
@@ -55,10 +73,14 @@ export default function Navbar({ user }) {
         <div className="relative">
           <button
             onClick={() => setMenuAberto(!menuAberto)}
-            className="w-10 h-10 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center hover:bg-brand-700 transition-colors text-sm shadow-md"
+            className="w-10 h-10 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center hover:bg-brand-700 transition-colors text-sm shadow-md overflow-hidden"
             title="Menu"
           >
-            {user?.email?.[0]?.toUpperCase() || "?"}
+            {perfil?.fotoUrl ? (
+              <img src={perfil.fotoUrl} alt="Perfil" className="w-full h-full object-cover" />
+            ) : (
+              letraInicial
+            )}
           </button>
 
           {menuAberto && (
@@ -84,19 +106,20 @@ export default function Navbar({ user }) {
               >
                 ⚙️ Admin
               </NavLink>
+              <NavLink
+                to="/alunos"
+                onClick={() => setMenuAberto(false)}
+                className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+              >
+                👥 Alunos
+              </NavLink>
               
               <div className="border-t border-gray-100 py-1">
                 <NavLink
                   to="/perfil"
                   onClick={() => setMenuAberto(false)}
                   className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-                ><NavLink
-  to="/alunos"
-  onClick={() => setMenuAberto(false)}
-  className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
->
-  👥 Alunos
-</NavLink>
+                >
                   👤 Perfil
                 </NavLink>
                 <NavLink

@@ -1,6 +1,6 @@
 // src/components/SolicitacoesForuns.jsx
 import { useEffect, useState } from "react";
-import { collection, query, where, onSnapshot, doc, updateDoc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, query, where, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
 export default function SolicitacoesForuns() {
@@ -18,26 +18,34 @@ export default function SolicitacoesForuns() {
   }, []);
 
   async function aprovar(solicitacao) {
-    // Cria o fórum
-    await setDoc(doc(db, "foruns", solicitacao.nome.toLowerCase().replace(/\s+/g, "-")), {
-      nome: solicitacao.nome,
-      descricao: solicitacao.descricao,
-      icone: solicitacao.icone,
-      status: "aprovado",
-      criadoPor: solicitacao.criadoPor,
-      criadoEm: serverTimestamp(),
-      totalPosts: 0,
-      membros: 0,
-    });
+    try {
+      // Cria um ID seguro sem acentos ou caracteres especiais
+      const forumId = solicitacao.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "-");
+      
+      // Cria o fórum oficial
+      await setDoc(doc(db, "foruns", forumId), {
+        nome: solicitacao.nome,
+        descricao: solicitacao.descricao,
+        icone: solicitacao.icone,
+        status: "aprovado",
+        criadoPor: solicitacao.criadoPor || "admin",
+        criadoEm: serverTimestamp(),
+        totalPosts: 0,
+        membros: 0,
+      });
 
-    // Atualiza a solicitação
-    await updateDoc(doc(db, "solicitacoesForuns", solicitacao.id), {
-      status: "aprovado",
-    });
+      // Exclui a solicitação para sumir do painel
+      await deleteDoc(doc(db, "solicitacoesForuns", solicitacao.id));
+    } catch (error) {
+      console.error(error);
+      alert("Erro ao aprovar. Verifique o console.");
+    }
   }
 
   async function rejeitar(id) {
-    await deleteDoc(doc(db, "solicitacoesForuns", id));
+    if (confirm("Rejeitar esta solicitação?")) {
+      await deleteDoc(doc(db, "solicitacoesForuns", id));
+    }
   }
 
   return (

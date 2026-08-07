@@ -4,8 +4,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { analisarTexto } from "../utils/moderacao";
-import { useEffect } from "react";
-import { getDoc } from "firebase/firestore";s
 
 const TEMPO_ENTRE_COMENTARIOS = 4000;
 
