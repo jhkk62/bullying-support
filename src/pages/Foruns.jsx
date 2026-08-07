@@ -37,15 +37,22 @@ export default function Foruns({ user }) {
   const [foruns, setForuns] = useState([]);
   const [modalAberta, setModalAberta] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
+    // 1. Buscamos apenas os aprovados (sem o orderBy do Firebase para não dar erro de índice)
     const q = query(
       collection(db, "foruns"),
-      where("status", "==", "aprovado"),
-      orderBy("criadoEm", "desc")
+      where("status", "==", "aprovado")
     );
+    
     const unsub = onSnapshot(q, (snap) => {
-      setForuns(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      
+      // 2. Ordenamos os fóruns do mais recente para o mais antigo usando JavaScript
+      docs.sort((a, b) => (b.criadoEm?.toMillis() || 0) - (a.criadoEm?.toMillis() || 0));
+      
+      setForuns(docs);
     });
+    
     return () => unsub();
   }, []);
 
