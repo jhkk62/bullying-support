@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import AgoraRTC from "agora-rtc-sdk-ng";
 
 // 👉 Troque pelo seu App ID (Agora Console → Project Management)
-const AGORA_APP_ID = "7435a4126bc54433aaaffcdadcc2114e";
+const AGORA_APP_ID = "5968eac4322e4fcdb81f60cc77453931";
 const NOME_DA_SALA = "Chat-de-voz-global-e-anonimo";
 
 export default function VoiceChat({ user }) {

@@ -1,3 +1,4 @@
+// src/pages/Login.jsx
 import { useState } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -5,7 +6,6 @@ import { auth, db } from "../firebase";
 
 const TURMAS = ["6º A", "6º B", "7º A", "7º B", "8º A", "8º B", "9º A", "9º B", "1º A", "1º B", "2º ano", "3º ano"];
 const TURMA_LIBERADA = "9º B";
-
 const ALUNOS_9B = [
   "Ana Beatriz Caires Nery",
   "Anna Beatriz Amorim",
@@ -36,103 +36,184 @@ function gerarEmailFicticio(nomeCompleto, turma) {
 }
 
 export default function Login() {
+  const [etapa, setEtapa] = useState("turma"); // "turma" → "nome" → "senha"
   const [turma, setTurma] = useState("");
   const [nome, setNome] = useState("");
-  const [naoEstaNaLista, setNaoEstaNaLista] = useState(false);
   const [nomeDigitado, setNomeDigitado] = useState("");
+  const [naoEstaNaLista, setNaoEstaNaLista] = useState(false);
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
   const nomeFinal = naoEstaNaLista ? nomeDigitado.trim() : nome;
 
-  // O erro estava aqui: faltava o 'async' antes da function
+  function avancarParaNome() {
+    if (!turma) return;
+    if (turma !== TURMA_LIBERADA) {
+      setErro("Essa turma ainda não está liberada.");
+      return;
+    }
+    setEtapa("nome");
+  }
+
+  function avancarParaSenha() {
+    if (!nome && !nomeDigitado) return;
+    setEtapa("senha");
+  }
+
   async function entrar(e) {
     e.preventDefault();
     setErro("");
     if (!nomeFinal || !senha) return;
-
-    if (senha.length < 6) {
-      setErro("A senha precisa ter pelo menos 6 caracteres.");
-      return;
-    }
-
     setCarregando(true);
     const email = gerarEmailFicticio(nomeFinal, turma);
 
     try {
-      // 1. Tenta logar primeiro
-      const cred = await signInWithEmailAndPassword(auth, email, senha);
+      const cred = naoEstaNaLista
+        ? await createUserWithEmailAndPassword(auth, email, senha)
+        : await signInWithEmailAndPassword(auth, email, senha);
+
       await setDoc(doc(db, "alunos", cred.user.uid), { nome: nomeFinal, turma }, { merge: true });
-      
     } catch (err) {
-      // 2. Se falhar, tenta criar a conta
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, email, senha);
-        await setDoc(doc(db, "alunos", cred.user.uid), { nome: nomeFinal, turma }, { merge: true });
-        
-      } catch (createErr) {
-        if (createErr.code === "auth/email-already-in-use") {
-          setErro("Conta já existe: A senha está incorreta.");
-        } else {
-          setErro("Erro interno. Aperte F12 e veja a aba Console.");
-          console.error("Erro no login:", err);
-          console.error("Erro na criação:", createErr);
-        }
+      if (["auth/user-not-found", "auth/wrong-password", "auth/invalid-credential"].includes(err.code)) {
+        setErro("Nome ou senha incorretos.");
+      } else if (err.code === "auth/email-already-in-use") {
+        setErro("Já existe conta com esse nome.");
+        setEtapa("nome");
+      } else {
+        setErro("Erro ao entrar. Tente novamente.");
       }
     } finally {
       setCarregando(false);
     }
   }
 
-  if (turma && turma !== TURMA_LIBERADA) {
-    return (
-      <div className="max-w-md mx-auto px-6 py-20 text-center">
-        <p className="text-gray-500 mb-4">Essa turma ainda não está liberada para usar o Apoia+.</p>
-        <button onClick={() => setTurma("")} className="text-brand-600 underline">Voltar</button>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-md mx-auto px-6 py-20">
-      <h1 className="text-2xl font-bold text-gray-800 mb-2 text-center">🤝 Apoia+</h1>
-      <p className="text-gray-500 text-sm text-center mb-8">Acesso restrito aos alunos do colégio.</p>
-      <form onSubmit={entrar} className="bg-white rounded-2xl shadow p-6 border border-gray-100 space-y-3">
-        <select value={turma} onChange={(e) => setTurma(e.target.value)} className="w-full border border-gray-200 rounded-lg px-4 py-2">
-          <option value="">Selecione sua turma</option>
-          {TURMAS.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+    <div className="min-h-screen bg-gradient-to-br from-brand-600 to-purple-700 flex items-center justify-center px-6 py-10">
+      <div className="w-full max-w-sm">
+        {/* Header */}
+        <div className="text-center mb-10">
+          <div className="text-5xl mb-3">🤝</div>
+          <h1 className="text-3xl font-bold text-white mb-2">Apoia+</h1>
+          <p className="text-brand-50/80 text-sm">Um espaço seguro pra você se sentir acolhido(a)</p>
+        </div>
 
-        {turma === TURMA_LIBERADA && (
-          <>
-            {!naoEstaNaLista ? (
+        {/* Card */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8">
+          {etapa === "turma" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-3">Qual é sua turma?</label>
               <select
-                value={nome}
-                onChange={(e) => e.target.value === "__outro__" ? setNaoEstaNaLista(true) : setNome(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-4 py-2"
+                value={turma}
+                onChange={(e) => setTurma(e.target.value)}
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-brand-500 transition-colors"
               >
-                <option value="">Selecione seu nome</option>
-                {ALUNOS_9B.map((n) => <option key={n} value={n}>{n}</option>)}
-                <option value="__outro__">Não estou na lista</option>
+                <option value="">Selecione...</option>
+                {TURMAS.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
               </select>
-            ) : (
-              <input type="text" value={nomeDigitado} onChange={(e) => setNomeDigitado(e.target.value)} placeholder="Digite seu nome completo"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2" />
-            )}
+              {erro && <p className="text-red-500 text-sm mb-4">{erro}</p>}
+              <button
+                onClick={avancarParaNome}
+                disabled={!turma || carregando}
+                className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
+              >
+                Continuar
+              </button>
+            </div>
+          )}
 
-            <input type="password" value={senha} onChange={(e) => setSenha(e.target.value)}
-              placeholder={naoEstaNaLista ? "Crie uma senha (ex: sua data de nascimento)" : "Sua senha"}
-              className="w-full border border-gray-200 rounded-lg px-4 py-2" />
+          {etapa === "nome" && (
+            <div>
+              <label className="block text-sm font-semibold text-gray-800 mb-3">
+                {naoEstaNaLista ? "Digite seu nome" : "Quem é você?"}
+              </label>
+              {!naoEstaNaLista ? (
+                <select
+                  value={nome}
+                  onChange={(e) => {
+                    if (e.target.value === "__outro__") {
+                      setNaoEstaNaLista(true);
+                      setNome("");
+                    } else {
+                      setNome(e.target.value);
+                    }
+                  }}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-brand-500"
+                >
+                  <option value="">Selecione...</option>
+                  {ALUNOS_9B.map((n) => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                  <option value="__outro__">Não estou na lista</option>
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={nomeDigitado}
+                  onChange={(e) => setNomeDigitado(e.target.value)}
+                  placeholder="Digite aqui"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-brand-500"
+                />
+              )}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEtapa("turma")}
+                  className="flex-1 border-2 border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50"
+                >
+                  Voltar
+                </button>
+                <button
+                  onClick={avancarParaSenha}
+                  disabled={!nomeFinal || carregando}
+                  className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+          )}
 
-            {erro && <p className="text-red-500 text-sm">{erro}</p>}
+          {etapa === "senha" && (
+            <form onSubmit={entrar}>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">Sua senha</label>
+              <p className="text-xs text-gray-500 mb-3">
+                {naoEstaNaLista ? "Crie uma senha segura (recomendamos sua data de nascimento + números extras)" : "Sua data de nascimento (no padrão DDMM_YYYY)"}
+              </p>
+              <input
+                type="password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="••••••••"
+                className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-brand-500"
+              />
+              {erro && <p className="text-red-500 text-sm mb-4">{erro}</p>}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEtapa("nome")}
+                  className="flex-1 border-2 border-gray-200 text-gray-700 font-semibold py-3 rounded-xl hover:bg-gray-50"
+                >
+                  Voltar
+                </button>
+                <button
+                  type="submit"
+                  disabled={carregando}
+                  className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
+                >
+                  {carregando ? "Entrando..." : naoEstaNaLista ? "Criar Conta" : "Entrar"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
 
-            <button disabled={carregando} className="w-full bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-medium py-2 rounded-full">
-              {carregando ? "Entrando..." : naoEstaNaLista ? "Criar Conta" : "Entrar"}
-            </button>
-          </>
-        )}
-      </form>
+        {/* Footer info */}
+        <div className="text-center mt-8 text-white/70 text-xs">
+          <p>Ao usar este site, você concorda com os <a href="/termos" className="underline hover:text-white">termos de uso</a>.</p>
+        </div>
+      </div>
     </div>
   );
 }

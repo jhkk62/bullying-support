@@ -1,14 +1,12 @@
 // src/utils/moderacao.js
-
-// Ameaças/ataques diretos a uma pessoa -> "grave" (bane 24h)
 const PADROES_GRAVES = [
   /vou\s*te\s*matar/i,
   /vou\s*te\s*encontrar\s*e/i,
   /vou\s*te\s*bater/i,
   /devia(m)?\s*morrer/i,
+  /se\s*mata/i,
 ];
 
-// Xingamentos/insultos sem ameaça de violência -> "moderado" (bane 2min)
 const PADROES_MODERADOS = [
   /\bidiota\b/i,
   /\bimbecil\b/i,
@@ -18,19 +16,25 @@ const PADROES_MODERADOS = [
   /filh[oa]\s*da\s*puta/i,
 ];
 
-// Menção a automutilação/suicídio -> "autolesao" (NÃO bane, mostra apoio)
 const PADROES_AUTOLESAO = [
-  /se\s*mat[ae]\b/i,
-  /v[aá]\s*se\s*matar/i,
   /me\s*matar/i,
   /quero\s*morrer/i,
   /quero\s*sumir/i,
 ];
 
-export function analisarTexto(texto) {
+export function analisarTexto(texto, tipo = "post") {
   const normalizado = texto.toLowerCase();
-  if (PADROES_AUTOLESAO.some((p) => p.test(normalizado))) return "autolesao";
+  
+  // Ameaça grave: SEMPRE bane (posts ou comentários)
   if (PADROES_GRAVES.some((p) => p.test(normalizado))) return "grave";
-  if (PADROES_MODERADOS.some((p) => p.test(normalizado))) return "moderado";
+  
+  // Automutilação: nunca bane (mostra apoio)
+  if (PADROES_AUTOLESAO.some((p) => p.test(normalizado))) return "autolesao";
+  
+  // Xingamento moderado: só bane em COMENTÁRIOS
+  if (PADROES_MODERADOS.some((p) => p.test(normalizado))) {
+    return tipo === "comentario" ? "moderado" : "sinalizado";
+  }
+  
   return "ok";
 }

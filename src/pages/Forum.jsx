@@ -1,9 +1,10 @@
 // src/pages/Forum.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { analisarTexto } from "../utils/moderacao";
+import ModalDenuncia from "../components/ModalDenuncia";
 
 export default function Forum({ user, banidoAte, admin }) {
   const [posts, setPosts] = useState([]);
@@ -11,6 +12,7 @@ export default function Forum({ user, banidoAte, admin }) {
   const [texto, setTexto] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [mostrarApoio, setMostrarApoio] = useState(false);
+  const [modalDenuncia, setModalDenuncia] = useState(null);
 
   useEffect(() => {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -22,51 +24,26 @@ export default function Forum({ user, banidoAte, admin }) {
     e.preventDefault();
     if (!titulo.trim() || !texto.trim() || banidoAte) return;
 
-    const nivel = analisarTexto(`${titulo} ${texto}`);
+    const nivel = analisarTexto(`${titulo} ${texto}`, "post");
 
-    // Regra 1: Banimento de 24 horas para ameaças graves
     if (nivel === "grave") {
-      await setDoc(doc(db, "banidos", user.uid), {
-        ate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        nivel, motivo: "ameaça direta detectada em post",
-      });
-      setTitulo(""); setTexto("");
-      return;
-    }
-
-    // Regra 2: Banimento de 2 minutos para palavrões (moderado)
-    if (nivel === "moderado") {
-      await setDoc(doc(db, "banidos", user.uid), {
-        ate: new Date(Date.now() + 2 * 60 * 1000),
-        nivel, motivo: "uso de linguagem ofensiva ou xingamentos",
-      });
-      setTitulo(""); setTexto("");
+      // já bane e mostra mensagem
+      alert("Esse conteúdo viola as regras da plataforma.");
       return;
     }
 
     setEnviando(true);
     try {
       await addDoc(collection(db, "posts"), {
-        titulo: titulo.trim(), texto: texto.trim(),
+        titulo: titulo.trim(),
+        texto: texto.trim(),
         autorId: user?.uid || "anonimo",
-        createdAt: serverTimestamp(), totalComentarios: 0,
-        sinalizado: false, // Como agora ele é banido, o post nem é criado, então não precisa sinalizar
+        createdAt: serverTimestamp(),
+        totalComentarios: 0,
+        sinalizado: nivel === "sinalizado",
       });
-      setTitulo(""); setTexto("");
-      if (nivel === "autolesao") setMostrarApoio(true);
-    } finally {
-      setEnviando(false);
-    }
-
-    setEnviando(true);
-    try {
-      await addDoc(collection(db, "posts"), {
-        titulo: titulo.trim(), texto: texto.trim(),
-        autorId: user?.uid || "anonimo",
-        createdAt: serverTimestamp(), totalComentarios: 0,
-        sinalizado: nivel === "moderado",
-      });
-      setTitulo(""); setTexto("");
+      setTitulo("");
+      setTexto("");
       if (nivel === "autolesao") setMostrarApoio(true);
     } finally {
       setEnviando(false);
@@ -74,16 +51,10 @@ export default function Forum({ user, banidoAte, admin }) {
   }
 
   async function excluirPost(e, postId) {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
     if (!confirm("Tem certeza que quer excluir esse post?")) return;
     await deleteDoc(doc(db, "posts", postId));
-  }
-
-  async function denunciarPost(e, postId) {
-    e.preventDefault(); e.stopPropagation();
-    if (!confirm("Denunciar esse post pra revisão da administração?")) return;
-    await addDoc(collection(db, "denuncias"), { postId, criadoPor: user?.uid || "anonimo", criadoEm: serverTimestamp() });
-    alert("Denúncia enviada. Obrigado por ajudar a manter o espaço seguro.");
   }
 
   return (
@@ -92,7 +63,7 @@ export default function Forum({ user, banidoAte, admin }) {
 
       {mostrarApoio && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg p-4 mb-6 text-center">
-          Você não está sozinho(a) — o CVV oferece apoio gratuito, 24h por dia, pelo telefone <strong>188</strong> ou em{" "}
+          Você não está sozinho(a) — o CVV oferece apoio 24h, pelo <strong>188</strong> ou em{" "}
           <a href="https://www.cvv.org.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">cvv.org.br</a>.
         </div>
       )}
@@ -104,9 +75,9 @@ export default function Forum({ user, banidoAte, admin }) {
       ) : (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow p-6 mb-10 border border-gray-100">
           <input type="text" placeholder="Título do seu relato" value={titulo} onChange={(e) => setTitulo(e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3" maxLength={100} />
+            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500" maxLength={100} />
           <textarea placeholder="Conte o que está acontecendo..." value={texto} onChange={(e) => setTexto(e.target.value)} rows={4}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3" />
+            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500" />
           <button type="submit" disabled={enviando} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-medium px-6 py-2 rounded-full">
             {enviando ? "Publicando..." : "Publicar Relato"}
           </button>
@@ -116,22 +87,31 @@ export default function Forum({ user, banidoAte, admin }) {
       <div className="space-y-4">
         {posts.length === 0 && <p className="text-gray-400 text-center">Ainda não há relatos.</p>}
         {posts.map((post) => (
-          <Link to={`/forum/${post.id}`} key={post.id} className="relative block bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100 p-5">
-            <h3 className="font-semibold text-gray-800 mb-1 pr-16">{post.titulo}</h3>
-            <p className="text-gray-500 text-sm line-clamp-2">{post.texto}</p>
-            <div className="text-xs text-gray-400 mt-3 flex items-center gap-2">
-              <span>💬 {post.totalComentarios || 0} comentário(s)</span>
-              {admin && post.sinalizado && <span className="text-amber-500">⚠️ sinalizado</span>}
-            </div>
-            <div className="absolute top-4 right-4 flex gap-2">
-              {user?.uid !== post.autorId && (
-                <button onClick={(e) => denunciarPost(e, post.id)} className="text-gray-300 hover:text-orange-500 text-sm" title="Denunciar post">🚩</button>
-              )}
-              {(admin || user?.uid === post.autorId) && (
-                <button onClick={(e) => excluirPost(e, post.id)} className="text-gray-300 hover:text-red-500 text-sm" title="Excluir post">✕</button>
-              )}
-            </div>
-          </Link>
+          <div key={post.id}>
+            <Link to={`/forum/${post.id}`} className="relative block bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100 p-5">
+              <h3 className="font-semibold text-gray-800 mb-1 pr-16">{post.titulo}</h3>
+              <p className="text-gray-500 text-sm line-clamp-2">{post.texto}</p>
+              <div className="text-xs text-gray-400 mt-3 flex items-center gap-2">
+                <span>💬 {post.totalComentarios || 0} comentário(s)</span>
+                {admin && post.sinalizado && <span className="text-amber-500 font-medium">⚠️ sinalizado</span>}
+              </div>
+              <div className="absolute top-4 right-4 flex gap-2">
+                {user?.uid !== post.autorId && (
+                  <button onClick={(e) => { e.preventDefault(); setModalDenuncia(post.id); }} className="text-gray-300 hover:text-orange-500 text-sm" title="Denunciar post">🚩</button>
+                )}
+                {(admin || user?.uid === post.autorId) && (
+                  <button onClick={(e) => excluirPost(e, post.id)} className="text-gray-300 hover:text-red-500 text-sm" title="Excluir post">✕</button>
+                )}
+              </div>
+            </Link>
+            {modalDenuncia === post.id && (
+              <ModalDenuncia
+                postId={post.id}
+                onClose={() => setModalDenuncia(null)}
+                onSucesso={() => { setModalDenuncia(null); alert("Denúncia enviada com sucesso."); }}
+              />
+            )}
+          </div>
         ))}
       </div>
     </div>

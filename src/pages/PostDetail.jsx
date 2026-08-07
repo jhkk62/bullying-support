@@ -28,50 +28,30 @@ export default function PostDetail({ user, banidoAte, admin }) {
     return () => unsub();
   }, [postId]);
 
-async function enviarComentario(e) {
+  async function enviarComentario(e) {
     e.preventDefault();
     if (enviando || emEspera || !novoComentario.trim() || banidoAte) return;
 
-    const nivel = analisarTexto(novoComentario);
+    const nivel = analisarTexto(novoComentario, "comentario");
 
-    // Regra 1: Banimento de 24 horas para ameaças graves
-    if (nivel === "grave") {
+    if (nivel === "grave" || nivel === "moderado") {
+      const duracaoMs = nivel === "grave" ? 24 * 60 * 60 * 1000 : 2 * 60 * 1000;
       await setDoc(doc(db, "banidos", user.uid), {
-        ate: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        nivel, motivo: "ameaça direta detectada em comentário",
+        ate: new Date(Date.now() + duracaoMs),
+        nivel,
+        motivo: `Linguagem ofensiva em comentário: "${novoComentario.substring(0, 50)}..."`,
       });
       setNovoComentario("");
-      return;
-    }
-
-    // Regra 2: Banimento de 2 minutos para palavrões (moderado)
-    if (nivel === "moderado") {
-      await setDoc(doc(db, "banidos", user.uid), {
-        ate: new Date(Date.now() + 2 * 60 * 1000),
-        nivel, motivo: "uso de linguagem ofensiva ou xingamentos em comentário",
-      });
-      setNovoComentario("");
+      alert("Seu comentário viola as regras. Você foi temporariamente suspenso.");
       return;
     }
 
     setEnviando(true);
     try {
       await addDoc(collection(db, "posts", postId, "comentarios"), {
-        texto: novoComentario.trim(), autorId: user?.uid || "anonimo", createdAt: serverTimestamp(),
-      });
-      await updateDoc(doc(db, "posts", postId), { totalComentarios: increment(1) });
-      setNovoComentario("");
-      if (nivel === "autolesao") setMostrarApoio(true);
-      setEmEspera(true);
-      setTimeout(() => setEmEspera(false), TEMPO_ENTRE_COMENTARIOS);
-    } finally {
-      setEnviando(false);
-    }
-
-    setEnviando(true);
-    try {
-      await addDoc(collection(db, "posts", postId, "comentarios"), {
-        texto: novoComentario.trim(), autorId: user?.uid || "anonimo", createdAt: serverTimestamp(),
+        texto: novoComentario.trim(),
+        autorId: user?.uid || "anonimo",
+        createdAt: serverTimestamp(),
       });
       await updateDoc(doc(db, "posts", postId), { totalComentarios: increment(1) });
       setNovoComentario("");
@@ -122,7 +102,7 @@ async function enviarComentario(e) {
 
       {mostrarApoio && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 text-sm rounded-lg p-4 mb-4 text-center">
-          Você não está sozinho(a) — o CVV atende 24h, pelo telefone <strong>188</strong> ou em{" "}
+          Você não está sozinho(a) — o CVV atende 24h, pelo <strong>188</strong> ou em{" "}
           <a href="https://www.cvv.org.br" target="_blank" rel="noopener noreferrer" className="underline font-medium">cvv.org.br</a>.
         </div>
       )}
@@ -135,7 +115,7 @@ async function enviarComentario(e) {
         <form onSubmit={enviarComentario} className="flex gap-2">
           <input value={novoComentario} onChange={(e) => setNovoComentario(e.target.value)}
             placeholder={bloqueado ? "Aguarde alguns segundos..." : "Deixe uma palavra de apoio..."} disabled={bloqueado}
-            className="flex-1 border border-gray-200 rounded-full px-4 py-2 disabled:bg-gray-100" />
+            className="flex-1 border border-gray-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:bg-gray-100" />
           <button disabled={bloqueado} className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white px-5 py-2 rounded-full">Enviar</button>
         </form>
       )}
