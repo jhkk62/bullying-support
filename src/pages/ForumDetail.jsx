@@ -55,6 +55,19 @@ export default function ForumDetail({ user, banidoAte, admin }) {
     }
   }
 
+  // Função exclusiva para o Admin apagar o fórum inteiro
+  async function excluirForum() {
+    if (!confirm("⚠️ ATENÇÃO: Tem certeza que deseja excluir este fórum permanentemente?")) return;
+    
+    try {
+      await deleteDoc(doc(db, "foruns", forumId));
+      navigate("/forum"); // Joga o admin de volta pra lista de fóruns
+    } catch (error) {
+      console.error("Erro ao excluir fórum:", error);
+      alert("Erro ao tentar excluir o fórum.");
+    }
+  }
+
   async function criarPost(e) {
     e.preventDefault();
     if (!titulo.trim() || !texto.trim() || banidoAte || emEspera) return;
@@ -112,14 +125,26 @@ export default function ForumDetail({ user, banidoAte, admin }) {
             <p className="text-brand-50/80">{forum.descricao}</p>
           </div>
         </div>
-        <button
-          onClick={toggleMembro}
-          className={`px-6 py-2 rounded-full font-bold text-sm transition-colors ${
-            isMembro ? "bg-white/20 text-white hover:bg-white/30" : "bg-white text-brand-600 hover:bg-gray-100 shadow-md"
-          }`}
-        >
-          {isMembro ? "Sair do Fórum" : "Participar"}
-        </button>
+        
+        {/* Container dos botões do cabeçalho */}
+        <div className="flex items-center gap-3">
+          {admin && (
+            <button
+              onClick={excluirForum}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md transition-colors"
+            >
+              🗑️ Excluir Fórum
+            </button>
+          )}
+          <button
+            onClick={toggleMembro}
+            className={`px-6 py-2 rounded-full font-bold text-sm transition-colors ${
+              isMembro ? "bg-white/20 text-white hover:bg-white/30" : "bg-white text-brand-600 hover:bg-gray-100 shadow-md"
+            }`}
+          >
+            {isMembro ? "Sair do Fórum" : "Participar"}
+          </button>
+        </div>
       </div>
       
       <div className="flex gap-6 text-sm text-gray-500 mb-8 font-medium">
