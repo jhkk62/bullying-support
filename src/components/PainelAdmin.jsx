@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, doc, deleteDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import SolicitacoesForuns from "./SolicitacoesForuns";
 
 function LinhaBanido({ uid, ate, motivo, onDesbanir }) {
   const [aluno, setAluno] = useState(null);
@@ -63,12 +64,11 @@ function ListaDenuncias() {
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-gray-700 mb-1">Motivo: <strong>{d.motivo}</strong></p>
                   {d.detalhes && <p className="text-xs text-gray-500 bg-gray-50 p-2 rounded italic">"{d.detalhes}"</p>}
-                  <p className="text-xs text-gray-400 mt-1">Post ID: <code className="text-gray-600 font-mono text-[0.7rem]">{d.postId}</code></p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <button onClick={() => excluirPostDenunciado(d.postId, d.id)} className="text-xs text-red-500 hover:underline">Excluir post</button>
-                <button onClick={() => descartar(d.id)} className="text-xs text-gray-400 hover:underline">Descartar denúncia</button>
+                <button onClick={() => descartar(d.id)} className="text-xs text-gray-400 hover:underline">Descartar</button>
               </div>
             </div>
           ))}
@@ -84,13 +84,14 @@ export default function PainelAdmin({ onDesligar }) {
       <div className="flex items-center justify-between mb-8 gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Painel Admin ✅</h1>
-          <p className="text-gray-500 text-sm">Todos os posts e comentários têm o botão ✕ pra você excluir.</p>
+          <p className="text-gray-500 text-sm">Gerencie a plataforma</p>
         </div>
         <button onClick={onDesligar} className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2 rounded-full shadow whitespace-nowrap">
           ⚠️ Tirar site do ar
         </button>
       </div>
       <div className="space-y-10">
+        <SolicitacoesForuns />
         <ListaDenuncias />
         <ListaBanidos />
       </div>

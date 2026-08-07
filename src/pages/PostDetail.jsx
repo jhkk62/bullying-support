@@ -1,11 +1,58 @@
 // src/pages/PostDetail.jsx
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { analisarTexto } from "../utils/moderacao";
+import { useEffect } from "react";
+import { getDoc } from "firebase/firestore";s
 
 const TEMPO_ENTRE_COMENTARIOS = 4000;
+
+// Sub-componente criado para permitir o uso correto de useState e useEffect por comentário
+function ComentarioItem({ c, user, admin, excluirComentario }) {
+  const [alunoComentario, setAlunoComentario] = useState(null);
+
+  useEffect(() => {
+    if (c.autorId === user?.uid) {
+      getDoc(doc(db, "alunos", user.uid)).then((snap) => {
+        if (snap.exists()) setAlunoComentario(snap.data());
+      });
+    }
+  }, [c.autorId, user?.uid]);
+
+  const mostrarPerfil = c.autorId === user?.uid;
+
+  return (
+    <div className="relative bg-brand-50 rounded-lg p-4 pr-10 text-sm text-gray-700">
+      {mostrarPerfil && alunoComentario && (
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-brand-200">
+          <div className="w-6 h-6 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-bold overflow-hidden flex-shrink-0">
+            {alunoComentario.fotoUrl ? (
+              <img src={alunoComentario.fotoUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              alunoComentario.apelido?.[0]?.toUpperCase() || "?"
+            )}
+          </div>
+          <div className="flex-1">
+            <p className="text-xs font-semibold text-brand-700">{alunoComentario.apelido || "Você"}</p>
+            <p className="text-xs text-brand-600">Seu comentário</p>
+          </div>
+        </div>
+      )}
+      <p>{c.texto}</p>
+      {(admin || user?.uid === c.autorId) && (
+        <button
+          onClick={() => excluirComentario(c.id)}
+          className="absolute top-3 right-3 text-gray-300 hover:text-red-500 text-xs"
+          title="Excluir comentário"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
 
 export default function PostDetail({ user, banidoAte, admin }) {
   const { postId } = useParams();
@@ -89,14 +136,16 @@ export default function PostDetail({ user, banidoAte, admin }) {
       </div>
 
       <h2 className="font-semibold text-gray-700 mb-3">Comentários de apoio ({comentarios.length})</h2>
+      
       <div className="space-y-3 mb-6">
         {comentarios.map((c) => (
-          <div key={c.id} className="relative bg-brand-50 rounded-lg p-4 pr-10 text-sm text-gray-700">
-            {c.texto}
-            {(admin || user?.uid === c.autorId) && (
-              <button onClick={() => excluirComentario(c.id)} className="absolute top-3 right-3 text-gray-300 hover:text-red-500 text-xs" title="Excluir comentário">✕</button>
-            )}
-          </div>
+          <ComentarioItem 
+            key={c.id} 
+            c={c} 
+            user={user} 
+            admin={admin} 
+            excluirComentario={excluirComentario} 
+          />
         ))}
       </div>
 

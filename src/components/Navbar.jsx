@@ -8,6 +8,7 @@ import { auth } from "../firebase";
 const links = [
   { to: "/", label: "Início", end: true },
   { to: "/forum", label: "Fóruns", end: false },
+  { to: "/alunos", label: "Alunos", end: false },
   { to: "/admin", label: "Admin", end: false },
 ];
 
@@ -22,10 +23,10 @@ export default function Navbar({ user }) {
 
   return (
     <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100 shadow-sm">
-      <div className="max-w-5xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
         <span className="text-lg sm:text-xl font-bold text-brand-700">🤝 Apoia+</span>
 
-        {/* Links (escondidos em mobile) */}
+        {/* Links (hidden em mobile, visible em desktop) */}
         <div className="hidden sm:flex gap-2">
           {links.map((link) => (
             <NavLink
@@ -54,42 +55,73 @@ export default function Navbar({ user }) {
         <div className="relative">
           <button
             onClick={() => setMenuAberto(!menuAberto)}
-            className="w-10 h-10 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center hover:bg-brand-700 transition-colors text-sm"
+            className="w-10 h-10 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center hover:bg-brand-700 transition-colors text-sm shadow-md"
             title="Menu"
           >
             {user?.email?.[0]?.toUpperCase() || "?"}
           </button>
 
           {menuAberto && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+            <div className="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-xl border border-gray-100 py-1 z-50">
               <NavLink
-                to="/perfil"
+                to="/"
                 onClick={() => setMenuAberto(false)}
-                className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
               >
-                👤 Perfil
+                🏠 Início
               </NavLink>
               <NavLink
-                to="/notificacoes"
+                to="/forum"
                 onClick={() => setMenuAberto(false)}
-                className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
               >
-                🔔 Notificações
+                💬 Fóruns
               </NavLink>
               <NavLink
-                to="/log"
+                to="/admin"
                 onClick={() => setMenuAberto(false)}
-                className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
               >
-                📋 Atualizações
+                ⚙️ Admin
               </NavLink>
-              <NavLink
-                to="/termos"
-                onClick={() => setMenuAberto(false)}
-                className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
-              >
-                📖 Termos
-              </NavLink>
+              
+              <div className="border-t border-gray-100 py-1">
+                <NavLink
+                  to="/perfil"
+                  onClick={() => setMenuAberto(false)}
+                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                ><NavLink
+  to="/alunos"
+  onClick={() => setMenuAberto(false)}
+  className="block sm:hidden px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+>
+  👥 Alunos
+</NavLink>
+                  👤 Perfil
+                </NavLink>
+                <NavLink
+                  to="/notificacoes"
+                  onClick={() => setMenuAberto(false)}
+                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                >
+                  🔔 Notificações
+                </NavLink>
+                <NavLink
+                  to="/log"
+                  onClick={() => setMenuAberto(false)}
+                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                >
+                  📋 Atualizações
+                </NavLink>
+                <NavLink
+                  to="/termos"
+                  onClick={() => setMenuAberto(false)}
+                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-100"
+                >
+                  📖 Termos
+                </NavLink>
+              </div>
+              
               <button
                 onClick={sair}
                 className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50"
