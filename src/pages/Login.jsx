@@ -36,7 +36,7 @@ function gerarEmailFicticio(nomeCompleto, turma) {
 }
 
 export default function Login() {
-  const [etapa, setEtapa] = useState("turma"); // "turma" → "nome" → "senha"
+  const [etapa, setEtapa] = useState("turma");
   const [turma, setTurma] = useState("");
   const [nome, setNome] = useState("");
   const [nomeDigitado, setNomeDigitado] = useState("");
@@ -69,9 +69,30 @@ export default function Login() {
     const email = gerarEmailFicticio(nomeFinal, turma);
 
     try {
-      const cred = naoEstaNaLista
-        ? await createUserWithEmailAndPassword(auth, email, senha)
-        : await signInWithEmailAndPassword(auth, email, senha);
+      let cred;
+
+      if (naoEstaNaLista) {
+        cred = await createUserWithEmailAndPassword(auth, email, senha);
+      } else {
+        try {
+          // Tenta fazer o login primeiro
+          cred = await signInWithEmailAndPassword(auth, email, senha);
+        } catch (authErr) {
+          // Se a conta não existir, vamos criá-la automaticamente
+          if (authErr.code === "auth/user-not-found" || authErr.code === "auth/invalid-credential") {
+            try {
+              cred = await createUserWithEmailAndPassword(auth, email, senha);
+            } catch (createErr) {
+              if (createErr.code === "auth/email-already-in-use") {
+                throw authErr; // Conta já existe, repassa o erro de senha incorreta
+              }
+              throw createErr;
+            }
+          } else {
+            throw authErr;
+          }
+        }
+      }
 
       await setDoc(doc(db, "alunos", cred.user.uid), { nome: nomeFinal, turma }, { merge: true });
     } catch (err) {
@@ -80,6 +101,8 @@ export default function Login() {
       } else if (err.code === "auth/email-already-in-use") {
         setErro("Já existe conta com esse nome.");
         setEtapa("nome");
+      } else if (err.code === "auth/weak-password") {
+        setErro("A senha deve ter pelo menos 6 caracteres.");
       } else {
         setErro("Erro ao entrar. Tente novamente.");
       }
@@ -137,6 +160,7 @@ export default function Login() {
                       setNaoEstaNaLista(true);
                       setNome("");
                     } else {
+                      setNaoEstaNaLista(false); // Garante que o estado retorne caso ele troque novamente
                       setNome(e.target.value);
                     }
                   }}
@@ -202,7 +226,7 @@ export default function Login() {
                   disabled={carregando}
                   className="flex-1 bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-semibold py-3 rounded-xl"
                 >
-                  {carregando ? "Entrando..." : naoEstaNaLista ? "Criar Conta" : "Entrar"}
+                  {carregando ? "Entrando..." : "Entrar / Criar Conta"}
                 </button>
               </div>
             </form>
