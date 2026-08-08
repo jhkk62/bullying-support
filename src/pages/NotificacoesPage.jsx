@@ -1,7 +1,7 @@
 // src/pages/NotificacoesPage.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, deleteDoc, updateDoc, getDoc, addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, deleteDoc, updateDoc, getDoc, collection, serverTimestamp, writeBatch } from "firebase/firestore";
 import { db } from "../firebase";
 import { useNotificacoes } from "../hooks/useNotificacoes";
 
@@ -48,25 +48,31 @@ export default function NotificacoesPage({ user }) {
     await deleteDoc(doc(db, "notificacoes", notifId));
   }
 
-  // Nova Função: Aceitar Pedido de Amizade
+  // Nova Função: Aceitar Pedido de Amizade (Usando Batch para garantir os dois lados)
   async function aceitarAmizade(notif) {
+    if (!user?.uid || !notif.remetenteId) return;
+
     try {
-      // Cria a amizade para o usuário atual (Você -> Amigo)
-      await addDoc(collection(db, "amizades"), {
+      const batch = writeBatch(db);
+
+      const refLado1 = doc(collection(db, "amizades"));
+      const refLado2 = doc(collection(db, "amizades"));
+
+      batch.set(refLado1, {
         usuarioId: user.uid,
         amigoId: notif.remetenteId,
         criadoEm: serverTimestamp(),
       });
 
-      // Cria a amizade reversa para o outro usuário (Amigo -> Você)
-      await addDoc(collection(db, "amizades"), {
+      batch.set(refLado2, {
         usuarioId: notif.remetenteId,
         amigoId: user.uid,
         criadoEm: serverTimestamp(),
       });
 
-      // Exclui a notificação de pedido após aceitar
-      await excluirNotificacao(notif.id);
+      batch.delete(doc(db, "notificacoes", notif.id));
+
+      await batch.commit();
       alert("✅ Pedido de amizade aceito!");
     } catch (err) {
       console.error("Erro ao aceitar amizade:", err);
