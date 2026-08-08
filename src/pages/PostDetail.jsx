@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { doc, onSnapshot, collection, query, orderBy, addDoc, serverTimestamp, updateDoc, increment, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { analisarTexto } from "../utils/moderacao";
+import { criarNotificacao } from "../utils/notificacoes";
 
 const TEMPO_ENTRE_COMENTARIOS = 4000;
 
@@ -98,6 +99,10 @@ export default function PostDetail({ user, banidoAte, admin }) {
         autorId: user?.uid || "anonimo",
         createdAt: serverTimestamp(),
       });
+      // Notificar o dono do post
+if (post.autorId !== user?.uid) {
+  await criarNotificacao(post.autorId, postId, "comentario", `Novo comentário em "${post.titulo}"`);
+}
       await updateDoc(doc(db, "posts", postId), { totalComentarios: increment(1) });
       setNovoComentario("");
       if (nivel === "autolesao") setMostrarApoio(true);

@@ -23,33 +23,33 @@ export default function Alunos() {
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen py-10 transition-colors">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="mb-10">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">👥 Alunos</h1>
-          <p className="text-gray-500">Conheça seus colegas — perfis visíveis apenas aqui</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">👥 Alunos</h1>
+          <p className="text-gray-500 dark:text-gray-400">Conheça seus colegas — perfis visíveis apenas aqui</p>
         </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8 text-sm text-blue-700">
+        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-8 text-sm text-blue-700 dark:text-blue-300">
           <p className="font-medium mb-1">🔒 Privacidade no Fórum</p>
           <p>Os perfis abaixo são visíveis apenas nesta página. No fórum e comentários, você é 100% anônimo — ninguém sabe quem comentou, nem consegue ver este perfil.</p>
         </div>
 
         {Object.entries(alunosPorTurma).map(([turma, alunosTurma]) => (
           <div key={turma} className="mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-brand-600"></span>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-brand-600 dark:bg-brand-500"></span>
               {turma} ({alunosTurma.length})
             </h2>
 
             {alunosTurma.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">Nenhum aluno nesta turma ainda.</p>
+              <p className="text-gray-400 dark:text-gray-500 text-center py-8">Nenhum aluno nesta turma ainda.</p>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {alunosTurma.map((aluno) => (
-                  <div key={aluno.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                  <div key={aluno.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-3 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-brand-600 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-brand-600 dark:bg-brand-700 flex items-center justify-center text-white font-bold text-sm overflow-hidden flex-shrink-0">
                         {aluno.fotoUrl ? (
                           <img src={aluno.fotoUrl} alt={aluno.apelido} className="w-full h-full object-cover" />
                         ) : (
@@ -57,12 +57,12 @@ export default function Alunos() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">{aluno.apelido || "Sem apelido"}</p>
-                        <p className="text-xs text-gray-500">{aluno.turma}</p>
+                        <p className="font-semibold text-gray-900 dark:text-white truncate">{aluno.apelido || "Sem apelido"}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{aluno.turma}</p>
                       </div>
                     </div>
                     {aluno.bio && (
-                      <p className="text-sm text-gray-600 line-clamp-2 border-t border-gray-100 pt-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 border-t border-gray-100 dark:border-gray-700 pt-3">
                         "{aluno.bio}"
                       </p>
                     )}

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function Home() {
   return (
-    <div>
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors">
       <section className="bg-gradient-to-br from-brand-600 to-purple-700 text-white">
         <div className="max-w-4xl mx-auto px-6 py-24 text-center">
           <h1 className="text-4xl md:text-5xl font-extrabold leading-tight mb-6 animate-fade-in-up">
@@ -29,10 +29,10 @@ export default function Home() {
         <PilarCard emoji="🎙️" titulo="Conversa em Tempo Real" texto="Entre em nossa sala de voz para conversar ao vivo quando precisar de companhia." delay="300ms" />
       </section>
 
-      <section className="bg-brand-50 py-16">
+      <section className="bg-brand-50 dark:bg-gray-800/50 py-16 transition-colors">
         <div className="max-w-3xl mx-auto text-center px-6">
-          <h2 className="text-2xl font-bold text-brand-700 mb-4">Pedir ajuda é um ato de coragem.</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-brand-700 dark:text-brand-400 mb-4">Pedir ajuda é um ato de coragem.</h2>
+          <p className="text-gray-600 dark:text-gray-300">
             Se você está passando por uma situação de bullying, saiba que
             existem pessoas prontas para te ouvir agora mesmo. Dê o primeiro passo.
           </p>
@@ -45,12 +45,12 @@ export default function Home() {
 function PilarCard({ emoji, titulo, texto, delay }) {
   return (
     <div
-      className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow p-8 text-center border border-gray-100 animate-fade-in-up"
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-xl transition-shadow p-8 text-center border border-gray-100 dark:border-gray-700 animate-fade-in-up"
       style={{ animationDelay: delay }}
     >
       <div className="text-4xl mb-4">{emoji}</div>
-      <h3 className="text-lg font-bold text-gray-800 mb-2">{titulo}</h3>
-      <p className="text-gray-500 text-sm">{texto}</p>
+      <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">{titulo}</h3>
+      <p className="text-gray-500 dark:text-gray-400 text-sm">{texto}</p>
     </div>
   );
 }

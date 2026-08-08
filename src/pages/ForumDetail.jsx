@@ -112,7 +112,7 @@ export default function ForumDetail({ user, banidoAte, admin }) {
     });
   }
 
-  if (!forum) return <p className="text-center py-20 text-gray-400">Carregando fórum...</p>;
+  if (!forum) return <p className="text-center py-20 text-gray-400 dark:text-gray-500">Carregando fórum...</p>;
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
@@ -147,32 +147,32 @@ export default function ForumDetail({ user, banidoAte, admin }) {
         </div>
       </div>
       
-      <div className="flex gap-6 text-sm text-gray-500 mb-8 font-medium">
+      <div className="flex gap-6 text-sm text-gray-500 dark:text-gray-400 mb-8 font-medium">
         <span>📝 {forum.totalPosts || 0} posts</span>
         <span>👥 {forum.membros || 0} membros</span>
       </div>
 
       {/* Formulário de Postagem */}
       {banidoAte ? (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg p-4 mb-8 text-center">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg p-4 mb-8 text-center">
           Você está temporariamente impedido de postar até {banidoAte.toLocaleString("pt-BR")}.
         </div>
       ) : (
-        <form onSubmit={criarPost} className="bg-white rounded-2xl shadow p-6 mb-8 border border-gray-100">
+        <form onSubmit={criarPost} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
           <input
             type="text"
             placeholder="Título do seu post"
             value={titulo}
             onChange={(e) => setTitulo(e.target.value)}
             maxLength={100}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <textarea
             placeholder="Conte mais..."
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             rows={4}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
           />
           <button
             type="submit"
@@ -187,7 +187,7 @@ export default function ForumDetail({ user, banidoAte, admin }) {
       {/* Lista de Posts */}
       <div className="space-y-4">
         {posts.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-100 p-8 text-center text-gray-400">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-8 text-center text-gray-400 dark:text-gray-500 transition-colors">
             Nenhum post neste fórum ainda. Seja o primeiro!
           </div>
         ) : (
@@ -195,18 +195,18 @@ export default function ForumDetail({ user, banidoAte, admin }) {
             <Link
               to={`/post/${post.id}`}
               key={post.id}
-              className="block bg-white rounded-xl border border-gray-100 p-5 hover:shadow-md transition-shadow relative"
+              className="block bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow relative"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 mb-1">{post.titulo}</h3>
-                  <p className="text-gray-600 text-sm line-clamp-2">{post.texto}</p>
-                  <div className="text-xs text-gray-400 mt-3">💬 {post.totalComentarios || 0} resposta(s)</div>
+                  <h3 className="font-semibold text-gray-800 dark:text-white mb-1">{post.titulo}</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">{post.texto}</p>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-3">💬 {post.totalComentarios || 0} resposta(s)</div>
                 </div>
                 {(admin || user.uid === post.autorId) && (
                   <button
                     onClick={(e) => excluirPost(e, post.id)}
-                    className="text-gray-300 hover:text-red-500 text-sm absolute top-5 right-5"
+                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-sm absolute top-5 right-5"
                     title="Excluir"
                   >
                     ✕
