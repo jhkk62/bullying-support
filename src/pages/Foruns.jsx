@@ -1,7 +1,7 @@
 // src/pages/Foruns.jsx
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
 import { db } from "../firebase";
 import ModalSolicitarForum from "../components/ModalSolicitarForum";
 
@@ -37,13 +37,15 @@ export default function Foruns({ user }) {
   const [modalAberta, setModalAberta] = useState(false);
 
   useEffect(() => {
+    // Removido o filtro where("status", "==", "aprovado") para exibir todos os fóruns criados
     const q = query(
       collection(db, "foruns"),
-      where("status", "==", "aprovado"),
       orderBy("criadoEm", "desc")
     );
     const unsub = onSnapshot(q, (snap) => {
       setForuns(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    }, (error) => {
+      console.error("Erro ao carregar fóruns:", error);
     });
     return () => unsub();
   }, []);
@@ -134,7 +136,7 @@ export default function Foruns({ user }) {
           onClose={() => setModalAberta(false)}
           onSucesso={() => {
             setModalAberta(false);
-            alert("✅ Solicitação enviada! O admin aprovará em breve.");
+            alert("✅ Solicitação enviada! O fórum já está visível.");
           }}
         />
       )}
