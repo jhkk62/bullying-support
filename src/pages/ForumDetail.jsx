@@ -17,7 +17,6 @@ export default function ForumDetail({ user, banidoAte, admin }) {
   const [enviando, setEnviando] = useState(false);
   const [emEspera, setEmEspera] = useState(false);
 
-  // Carrega os dados do Fórum
   useEffect(() => {
     const unsub = onSnapshot(doc(db, "foruns", forumId), (snap) => {
       if (snap.exists()) setForum({ id: snap.id, ...snap.data() });
@@ -26,12 +25,10 @@ export default function ForumDetail({ user, banidoAte, admin }) {
     return () => unsub();
   }, [forumId, navigate]);
 
-  // Carrega os posts associados a este fórum na coleção principal
   useEffect(() => {
     const q = query(collection(db, "posts"), where("forumId", "==", forumId));
     const unsub = onSnapshot(q, (snap) => {
       const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // Ordena no JavaScript para evitar erro de index no Firebase
       docs.sort((a, b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
       setPosts(docs);
     });
@@ -55,13 +52,11 @@ export default function ForumDetail({ user, banidoAte, admin }) {
     }
   }
 
-  // Função exclusiva para o Admin apagar o fórum inteiro
   async function excluirForum() {
     if (!confirm("⚠️ ATENÇÃO: Tem certeza que deseja excluir este fórum permanentemente?")) return;
-    
     try {
       await deleteDoc(doc(db, "foruns", forumId));
-      navigate("/forum"); // Joga o admin de volta pra lista de fóruns
+      navigate("/forum"); 
     } catch (error) {
       console.error("Erro ao excluir fórum:", error);
       alert("Erro ao tentar excluir o fórum.");
@@ -86,7 +81,7 @@ export default function ForumDetail({ user, banidoAte, admin }) {
         autorId: user.uid,
         createdAt: serverTimestamp(),
         totalComentarios: 0,
-        forumId: forumId // Associa o post a este fórum
+        forumId: forumId
       });
       setTitulo("");
       setTexto("");
@@ -102,7 +97,7 @@ export default function ForumDetail({ user, banidoAte, admin }) {
   }
 
   async function excluirPost(e, postId) {
-    e.preventDefault(); // Evita que o clique abra o post
+    e.preventDefault();
     e.stopPropagation();
     if (!confirm("Excluir este post?")) return;
     
@@ -116,7 +111,6 @@ export default function ForumDetail({ user, banidoAte, admin }) {
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
-      {/* Header do Fórum */}
       <div className="bg-gradient-to-r from-brand-600 to-purple-600 rounded-2xl p-8 mb-8 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <span className="text-5xl">{forum.icone}</span>
@@ -126,14 +120,13 @@ export default function ForumDetail({ user, banidoAte, admin }) {
           </div>
         </div>
         
-        {/* Container dos botões do cabeçalho */}
         <div className="flex items-center gap-3">
           {admin && (
             <button
               onClick={excluirForum}
               className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full font-bold text-sm shadow-md transition-colors"
             >
-              🗑️ Excluir Fórum
+              🗑️ Excluir
             </button>
           )}
           <button
@@ -152,71 +145,88 @@ export default function ForumDetail({ user, banidoAte, admin }) {
         <span>👥 {forum.membros || 0} membros</span>
       </div>
 
-      {/* Formulário de Postagem */}
-      {banidoAte ? (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg p-4 mb-8 text-center">
-          Você está temporariamente impedido de postar até {banidoAte.toLocaleString("pt-BR")}.
+      {/* TRAVA DE PRIVACIDADE */}
+      {!isMembro ? (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-12 text-center mt-8">
+          <span className="text-5xl mb-4 block">🔒</span>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Fórum Privado</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            Este é um espaço seguro. Você precisa participar do fórum para ver as publicações e interagir.
+          </p>
+          <button
+            onClick={toggleMembro}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-bold px-8 py-3 rounded-full shadow-md transition-all hover:scale-105"
+          >
+            Participar do Fórum
+          </button>
         </div>
       ) : (
-        <form onSubmit={criarPost} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
-          <input
-            type="text"
-            placeholder="Título do seu post"
-            value={titulo}
-            onChange={(e) => setTitulo(e.target.value)}
-            maxLength={100}
-            className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <textarea
-            placeholder="Conte mais..."
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-            rows={4}
-            className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
-          />
-          <button
-            type="submit"
-            disabled={enviando || emEspera}
-            className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-medium px-6 py-2 rounded-full transition-colors"
-          >
-            {enviando ? "Postando..." : emEspera ? "Aguarde..." : "Postar"}
-          </button>
-        </form>
-      )}
+        <>
+          {banidoAte ? (
+            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg p-4 mb-8 text-center">
+              Você está temporariamente impedido de postar até {banidoAte.toLocaleString("pt-BR")}.
+            </div>
+          ) : (
+            <form onSubmit={criarPost} className="bg-white dark:bg-gray-800 rounded-2xl shadow p-6 mb-8 border border-gray-100 dark:border-gray-700 transition-colors">
+              <input
+                type="text"
+                placeholder="Título do seu post"
+                value={titulo}
+                onChange={(e) => setTitulo(e.target.value)}
+                maxLength={100}
+                className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <textarea
+                placeholder="Conte mais..."
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+                rows={4}
+                className="w-full border border-gray-200 dark:border-gray-700 bg-transparent text-gray-900 dark:text-white dark:placeholder-gray-400 rounded-lg px-4 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+              />
+              <button
+                type="submit"
+                disabled={enviando || emEspera}
+                className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50 text-white font-medium px-6 py-2 rounded-full transition-colors"
+              >
+                {enviando ? "Postando..." : emEspera ? "Aguarde..." : "Postar"}
+              </button>
+            </form>
+          )}
 
-      {/* Lista de Posts */}
-      <div className="space-y-4">
-        {posts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-8 text-center text-gray-400 dark:text-gray-500 transition-colors">
-            Nenhum post neste fórum ainda. Seja o primeiro!
-          </div>
-        ) : (
-          posts.map((post) => (
-            <Link
-              to={`/post/${post.id}`}
-              key={post.id}
-              className="block bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow relative"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800 dark:text-white mb-1">{post.titulo}</h3>
-                  <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">{post.texto}</p>
-                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-3">💬 {post.totalComentarios || 0} resposta(s)</div>
-                </div>
-                {(admin || user.uid === post.autorId) && (
-                  <button
-                    onClick={(e) => excluirPost(e, post.id)}
-                    className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-sm absolute top-5 right-5"
-                    title="Excluir"
-                  >
-                    ✕
-                  </button>
-                )}
+          <div className="space-y-4">
+            {posts.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-8 text-center text-gray-400 dark:text-gray-500 transition-colors">
+                Nenhum post neste fórum ainda. Seja o primeiro!
               </div>
-            </Link>
-          ))
-        )}
-      </div>
+            ) : (
+              posts.map((post) => (
+                <Link
+                  to={`/post/${post.id}`}
+                  key={post.id}
+                  className="block bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5 hover:shadow-md transition-shadow relative"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-800 dark:text-white mb-1">{post.titulo}</h3>
+                      <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">{post.texto}</p>
+                      <div className="text-xs text-gray-400 dark:text-gray-500 mt-3">💬 {post.totalComentarios || 0} resposta(s)</div>
+                    </div>
+                    {(admin || user.uid === post.autorId) && (
+                      <button
+                        onClick={(e) => excluirPost(e, post.id)}
+                        className="text-gray-300 dark:text-gray-600 hover:text-red-500 dark:hover:text-red-400 text-sm absolute top-5 right-5"
+                        title="Excluir"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
